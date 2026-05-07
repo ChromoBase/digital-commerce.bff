@@ -1,48 +1,65 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../database/prisma.service';
 import { StorefrontHomeResponse } from './types/storefront-home.types';
 
 @Injectable()
 export class StorefrontService {
-  getHome(): StorefrontHomeResponse {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getHome(): Promise<StorefrontHomeResponse> {
+    const store = await this.prisma.store.findUnique({
+      where: { slug: 'digital-commerce' },
+      include: {
+        settings: true,
+        categories: {
+          where: { isVisibleHome: true },
+          orderBy: { sortOrder: 'asc' },
+        },
+        products: {
+          where: {
+            isFeatured: true,
+            status: 'ACTIVE',
+          },
+          include: {
+            images: {
+              orderBy: { sortOrder: 'asc' },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    if (!store) {
+      throw new NotFoundException(
+        'Default store not found. Run the database seed first.',
+      );
+    }
+
     return {
       store: {
-        name: 'Digital Commerce',
-        logoUrl: '/brand/logo.svg',
+        name: store.name,
+        logoUrl: store.logoUrl || '/logo.svg',
       },
       hero: {
-        mediaType: 'IMAGE',
-        mediaUrl: '/demo/hero.jpg',
-        title: 'New Season Essentials',
-        subtitle: 'Premium streetwear for modern commerce.',
+        mediaType: store.settings?.heroMediaType || 'IMAGE',
+        mediaUrl: store.settings?.heroMediaUrl || '/demo/hero.jpg',
+        posterUrl: store.settings?.heroPosterUrl ?? undefined,
+        title: store.settings?.heroTitle || 'Welcome',
+        subtitle: store.settings?.heroSubtitle || '',
       },
-      categories: [
-        {
-          id: 'men',
-          name: 'Men',
-          slug: 'men',
-        },
-        {
-          id: 'women',
-          name: 'Women',
-          slug: 'women',
-        },
-      ],
-      featuredProducts: [
-        {
-          id: 'oversized-black-hoodie',
-          name: 'Oversized Black Hoodie',
-          slug: 'oversized-black-hoodie',
-          priceCents: 7900,
-          imageUrl: '/demo/products/black-hoodie.jpg',
-        },
-        {
-          id: 'cropped-white-tee',
-          name: 'Cropped White Tee',
-          slug: 'cropped-white-tee',
-          priceCents: 3900,
-          imageUrl: '/demo/products/white-tee.jpg',
-        },
-      ],
+      categories: store.categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+      })),
+      featuredProducts: store.products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        priceCents: product.priceCents,
+        imageUrl: product.images[0]?.url || '/placeholder.jpg',
+      })),
     };
   }
 }

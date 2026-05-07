@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  STORE_ADMIN
+  SUPER_ADMIN
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model Store {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  currency  String   @default("USD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  settings   StorefrontSettings?
+  categories Category[]
+  products   Product[]
+}
+
+model StorefrontSettings {
+  id             String    @id @default(cuid())
+  storeId        String    @unique
+  heroMediaType  MediaType @default(IMAGE)
+  heroMediaUrl   String?
+  heroPosterUrl  String?
+  heroTitle      String?
+  heroSubtitle   String?
+  primaryColor   String?
+  secondaryColor String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id            String   @id @default(cuid())
+  storeId       String
+  name          String
+  slug          String
+  description   String?
+  imageUrl      String?
+  isVisibleHome Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([storeId, slug])
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  storeId     String
+  categoryId  String?
+  name        String
+  slug        String
+  description String?
+  priceCents  Int
+  status      ProductStatus @default(DRAFT)
+  isFeatured  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  store    Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category Category?        @relation(fields: [categoryId], references: [id])
+  images   ProductImage[]
+  variants ProductVariant[]
+
+  @@unique([storeId, slug])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductVariant {
+  id         String   @id @default(cuid())
+  productId  String
+  name       String
+  sku        String?
+  size       String?
+  color      String?
+  stock      Int      @default(0)
+  priceCents Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
