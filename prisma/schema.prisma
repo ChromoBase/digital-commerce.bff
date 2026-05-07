@@ -8,8 +8,11 @@ datasource db {
 
 enum Role {
   CUSTOMER
-  STORE_ADMIN
   SUPER_ADMIN
+}
+
+enum StoreMemberRole {
+  STORE_ADMIN
 }
 
 enum ProductStatus {
@@ -32,9 +35,10 @@ model Store {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  settings   StorefrontSettings?
-  categories Category[]
-  products   Product[]
+  settings    StorefrontSettings?
+  categories  Category[]
+  products    Product[]
+  memberships StoreMembership[]
 }
 
 model StorefrontSettings {
@@ -115,4 +119,29 @@ model ProductVariant {
   updatedAt  DateTime @updatedAt
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships StoreMembership[]
+}
+
+model StoreMembership {
+  id        String          @id @default(cuid())
+  userId    String
+  storeId   String
+  role      StoreMemberRole @default(STORE_ADMIN)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeId])
 }

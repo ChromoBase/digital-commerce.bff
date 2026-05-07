@@ -7,6 +7,8 @@ import { HealthModule } from './modules/health/health.module';
 import { StorefrontModule } from './modules/storefront/storefront.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { ProductsModule } from './modules/products/products.module';
       envFilePath: '.env',
     }),
     DatabaseModule,
+    AuthModule,
+    UsersModule,
     HealthModule,
     StorefrontModule,
     CategoriesModule,

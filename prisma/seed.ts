@@ -1,6 +1,10 @@
-import { PrismaClient, MediaType, ProductStatus } from '@prisma/client';
+import { PrismaClient, MediaType, ProductStatus, Role } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 
 // Use DIRECT_URL for seeding to avoid PgBouncer prepared statement issues
 const pool = new pg.Pool({ connectionString: process.env.DIRECT_URL });
@@ -39,6 +43,52 @@ async function main() {
       heroSubtitle: 'Premium fashion for the modern wardrobe',
       primaryColor: '#000000',
       secondaryColor: '#FFFFFF',
+    },
+  });
+
+  // Upsert demo users
+  await prisma.user.upsert({
+    where: { email: 'superadmin@digitalcommerce.dev' },
+    update: {},
+    create: {
+      email: 'superadmin@digitalcommerce.dev',
+      name: 'Super Admin',
+      role: Role.SUPER_ADMIN,
+    },
+  });
+
+  const storeAdmin = await prisma.user.upsert({
+    where: { email: 'admin@digitalcommerce.dev' },
+    update: {},
+    create: {
+      email: 'admin@digitalcommerce.dev',
+      name: 'Store Admin',
+      role: Role.CUSTOMER,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'customer@digitalcommerce.dev' },
+    update: {},
+    create: {
+      email: 'customer@digitalcommerce.dev',
+      name: 'Demo Customer',
+      role: Role.CUSTOMER,
+    },
+  });
+
+  // Create store membership for store admin
+  await prisma.storeMembership.upsert({
+    where: {
+      userId_storeId: {
+        userId: storeAdmin.id,
+        storeId: store.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: storeAdmin.id,
+      storeId: store.id,
     },
   });
 
