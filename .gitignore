@@ -56,3 +56,4 @@ pnpm-lock.yaml
 
 # Prisma, TypeORM or generated files
 generated/
+docs/

@@ -1,14 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { StorefrontHomeResponse } from './types/storefront-home.types';
 
 @Injectable()
 export class StorefrontService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async getHome(): Promise<StorefrontHomeResponse> {
     const store = await this.prisma.store.findUnique({
-      where: { slug: 'digital-commerce' },
+      where: {
+        slug: this.configService.getOrThrow<string>('DEFAULT_STORE_SLUG'),
+      },
       include: {
         settings: true,
         categories: {

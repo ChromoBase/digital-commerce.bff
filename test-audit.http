@@ -1,0 +1,132 @@
+### PHASE 3 - MINI AUDIT TEST SUITE
+### Testing security, role-based access, and public API filtering
+
+@baseUrl = http://localhost:4000/api
+
+### ===========================================
+### 1. PUBLIC ENDPOINTS - No Token Required
+### ===========================================
+
+### Test 1.1: Health Check (Public)
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+### Test 1.2: Storefront Home (Public)
+GET {{baseUrl}}/storefront/home
+Content-Type: application/json
+
+### Test 1.3: Public Categories (Should show only isActive=true)
+GET {{baseUrl}}/categories
+Content-Type: application/json
+
+### Test 1.4: Public Products (Should show only ACTIVE, not DRAFT/ARCHIVED)
+GET {{baseUrl}}/products
+Content-Type: application/json
+
+### Test 1.5: Public FAQs (NEW - Should show only isActive=true)
+GET {{baseUrl}}/faqs
+Content-Type: application/json
+
+### ===========================================
+### 2. ADMIN ENDPOINTS - No Token (Should get 401)
+### ===========================================
+
+### Test 2.1: Admin Products without token (Expect 401)
+GET {{baseUrl}}/admin/products
+Content-Type: application/json
+
+### Test 2.2: Admin Categories without token (Expect 401)
+GET {{baseUrl}}/admin/categories
+Content-Type: application/json
+
+### Test 2.3: Admin FAQs without token (Expect 401)
+GET {{baseUrl}}/admin/faqs
+Content-Type: application/json
+
+### ===========================================
+### 3. ADMIN WITH CUSTOMER ROLE (Should get 403)
+### ===========================================
+### Note: This requires a CUSTOMER user token
+### You need to create a customer user and login to get their token
+
+### Test 3.1: Login as CUSTOMER (if exists)
+# POST {{baseUrl}}/auth/login
+# Content-Type: application/json
+# 
+# {
+#   "email": "customer@example.com",
+#   "password": "password123"
+# }
+
+### Test 3.2: Admin Products with CUSTOMER token (Expect 403)
+# GET {{baseUrl}}/admin/products
+# Content-Type: application/json
+# Authorization: Bearer {{customerToken}}
+
+### ===========================================
+### 4. ADMIN WITH ADMIN ROLE (Should work)
+### ===========================================
+### Note: You need to login as admin first to get the token
+
+### Test 4.1: Login as ADMIN
+# POST {{baseUrl}}/auth/login
+# Content-Type: application/json
+# 
+# {
+#   "email": "admin@digicams.com",
+#   "password": "your-admin-password"
+# }
+
+### Test 4.2: Admin Products with ADMIN token (Expect 200)
+# GET {{baseUrl}}/admin/products
+# Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+### Test 4.3: Admin FAQs with ADMIN token (Expect 200)
+# GET {{baseUrl}}/admin/faqs
+# Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+
+### ===========================================
+### 5. DATA FILTERING VALIDATION
+### ===========================================
+
+### Test 5.1: Verify ARCHIVED products don't appear in public API
+### Steps:
+### 1. Use admin endpoint to list all products (including ARCHIVED)
+### 2. Use public endpoint to list products (should exclude ARCHIVED)
+### 3. Compare results
+
+### Test 5.2: Verify inactive categories don't appear in public API
+### Steps:
+### 1. Use admin endpoint to list all categories
+### 2. Use public endpoint to list categories (should exclude isActive=false)
+### 3. Compare results
+
+### Test 5.3: Verify inactive FAQs don't appear in public API
+### Steps:
+### 1. Use admin endpoint to list all FAQs
+### 2. Use public endpoint to list FAQs (should exclude isActive=false)
+### 3. Compare results
+
+### Test 5.4: Verify stock cannot be negative
+### POST {{baseUrl}}/admin/products/:productId/variants/:variantId/stock
+### Body: { "stock": -5 }
+### Expected: 400 Bad Request with validation error
+
+### ===========================================
+### AUDIT CHECKLIST
+### ===========================================
+# [ ] Build passes: npm run build
+# [ ] Unit tests pass: npm run test
+# [ ] E2E tests pass: npm run test:e2e
+# [ ] Public endpoints work without token
+# [ ] Admin endpoints require authentication (401 without token)
+# [ ] Admin endpoints reject CUSTOMER role (403)
+# [ ] Admin endpoints allow ADMIN role (200)
+# [ ] ARCHIVED products hidden from public
+# [ ] Inactive categories hidden from public
+# [ ] Inactive FAQs hidden from public
+# [ ] Negative stock rejected
+# [ ] Product cannot publish in inactive category
+# [ ] Category cannot be deleted if has products

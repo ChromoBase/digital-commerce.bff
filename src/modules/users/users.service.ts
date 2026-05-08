@@ -1,46 +1,46 @@
 import { Injectable } from '@nestjs/common';
+import { User } from '@prisma/client';
+import * as argon2 from 'argon2';
 import { PrismaService } from '../../database/prisma.service';
-
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { CreateCustomerInput, PublicUser } from './types/public-user.type';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findByEmail(email: string) {
+  async findByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: { email },
-      include: {
-        memberships: {
-          include: {
-            store: true,
-          },
-        },
-      },
     });
   }
 
-  findById(id: string) {
+  async findById(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: { id },
-      include: {
-        memberships: {
-          include: {
-            store: true,
-          },
-        },
+    });
+  }
+
+  async createCustomer(input: CreateCustomerInput): Promise<User> {
+    const passwordHash = await argon2.hash(input.password);
+
+    return this.prisma.user.create({
+      data: {
+        email: input.email,
+        name: input.name,
+        passwordHash,
+        role: 'CUSTOMER',
       },
     });
   }
 
-  getUserMemberships(userId: string) {
-    return this.prisma.storeMembership.findMany({
-      where: { userId },
-      include: {
-        store: true,
-      },
-    });
+  toPublicUser(user: User): PublicUser {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }

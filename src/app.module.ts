@@ -9,6 +9,8 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { FaqsModule } from './modules/faqs/faqs.module';
 
 @Module({
   imports: [
@@ -19,10 +21,12 @@ import { UsersModule } from './modules/users/users.module';
     DatabaseModule,
     AuthModule,
     UsersModule,
+    AdminModule,
     HealthModule,
     StorefrontModule,
     CategoriesModule,
     ProductsModule,
+    FaqsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

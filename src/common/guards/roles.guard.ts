@@ -7,16 +7,11 @@ import { AuthenticatedUser } from '../types/authenticated-user.type';
 /**
  * RolesGuard - Validates that an authenticated user has required roles.
  *
- * Usage: Apply @Roles() decorator to routes, then @UseGuards(AuthGuard, RolesGuard)
+ * Usage: Apply @Roles() decorator to routes, then @UseGuards(JwtAuthGuard, RolesGuard)
  *
- * This guard checks:
- * 1. User role (CUSTOMER, SUPER_ADMIN)
- * 2. Store-specific role (STORE_ADMIN via memberships)
+ * This guard checks user role (CUSTOMER, ADMIN) for single-store template.
  *
- * TODO: Add UsersService injection to check store memberships for STORE_ADMIN
- *
- * Current state: Validates against user.role and user.storeRole
- * Requires AuthGuard to populate request.user first
+ * Requires JwtAuthGuard to populate request.user first.
  */
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -29,7 +24,6 @@ export class RolesGuard implements CanActivate {
     );
 
     if (!requiredRoles) {
-      // No roles required, allow access
       return true;
     }
 
@@ -39,24 +33,9 @@ export class RolesGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
-      // User not authenticated, deny access
-      // AuthGuard should have caught this, but double-check
       return false;
     }
 
-    // Check if user has any of the required roles
-    return requiredRoles.some((role) => {
-      // Check platform-level role
-      if (user.role === role) {
-        return true;
-      }
-
-      // Check store-specific role
-      if (user.storeRole === role) {
-        return true;
-      }
-
-      return false;
-    });
+    return requiredRoles.some((role) => user.role === role);
   }
 }

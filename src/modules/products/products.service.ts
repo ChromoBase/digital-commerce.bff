@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import {
   ProductListResponse,
@@ -7,14 +8,19 @@ import {
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async findAll(
     category?: string,
     featured?: boolean,
   ): Promise<ProductListResponse[]> {
     const store = await this.prisma.store.findUnique({
-      where: { slug: 'digital-commerce' },
+      where: {
+        slug: this.configService.getOrThrow<string>('DEFAULT_STORE_SLUG'),
+      },
     });
 
     if (!store) {
@@ -60,7 +66,9 @@ export class ProductsService {
 
   async findOne(slug: string): Promise<ProductDetailResponse> {
     const store = await this.prisma.store.findUnique({
-      where: { slug: 'digital-commerce' },
+      where: {
+        slug: this.configService.getOrThrow<string>('DEFAULT_STORE_SLUG'),
+      },
     });
 
     if (!store) {

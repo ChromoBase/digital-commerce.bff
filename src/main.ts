@@ -13,7 +13,8 @@ async function bootstrap() {
   app.use(helmet());
 
   app.enableCors({
-    origin: configService.get<string>('FRONTEND_URL') || 'http://localhost:3000',
+    origin:
+      configService.get<string>('FRONTEND_URL') || 'http://localhost:3000',
     credentials: true,
   });
 
@@ -29,4 +30,7 @@ async function bootstrap() {
   await app.listen(port);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('Failed to bootstrap application:', error);
+  process.exit(1);
+});

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import {
   CategoryResponse,
@@ -7,14 +8,22 @@ import {
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async findAll(): Promise<CategoryResponse[]> {
     const store = await this.prisma.store.findUnique({
-      where: { slug: 'digital-commerce' },
+      where: {
+        slug: this.configService.getOrThrow<string>('DEFAULT_STORE_SLUG'),
+      },
       include: {
         categories: {
-          where: { isVisibleHome: true },
+          where: {
+            isActive: true,
+            isVisibleHome: true,
+          },
           orderBy: { sortOrder: 'asc' },
           include: {
             _count: {
@@ -43,11 +52,11 @@ export class CategoriesService {
     }));
   }
 
-  async findCategoryProducts(
-    slug: string,
-  ): Promise<CategoryProductsResponse> {
+  async findCategoryProducts(slug: string): Promise<CategoryProductsResponse> {
     const store = await this.prisma.store.findUnique({
-      where: { slug: 'digital-commerce' },
+      where: {
+        slug: this.configService.getOrThrow<string>('DEFAULT_STORE_SLUG'),
+      },
     });
 
     if (!store) {
@@ -75,6 +84,10 @@ export class CategoriesService {
     });
 
     if (!category) {
+      throw new NotFoundException(`Category '${slug}' not found`);
+    }
+
+    if (!category.isActive) {
       throw new NotFoundException(`Category '${slug}' not found`);
     }
 
